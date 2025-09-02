@@ -316,7 +316,7 @@
               <div class="meta">${ep.length ? `${escapeHtml(ep.length)} · `:''}${fmtDate(ep.ts || Date.now())}</div>
             </div>
           </div>
-          <audio controls controlslist="nodownload noplaybackrate noremoteplayback" preload="none">
+          <audio controls controlslist="nodownload noplaybackrate noremoteplayback" preload="none" crossorigin="anonymous">
             <source src="${initialSrc}" />
             Dein Browser kann dieses Audio nicht abspielen.
           </audio>
