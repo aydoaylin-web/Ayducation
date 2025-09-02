@@ -31,6 +31,9 @@
     .grid{display:grid;grid-template-columns: 1.3fr .7fr;gap:18px;margin-top:22px}
     @media (max-width:880px){.grid{grid-template-columns:1fr}}
 
+    /* per URL Desktop-Layout erzwingen (gleiches Layout auf Handy/Tablet) */
+    .force-desktop .grid{ grid-template-columns: 1.3fr .7fr !important; }
+
     .panel{background:rgba(8,18,36,.6);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 8px;box-shadow:var(--shadow)}
     .panel h3{margin:4px 0 12px;font-size:18px}
 
@@ -84,7 +87,7 @@
           </svg>
         </div>
         <div>
-          <h1>Ayducation der Schülerpodcast</h1>
+          <h1>Schülerpodcast</h1>
           <div class="muted">Argumentation & Erörterung – einfach erklärt</div>
         </div>
       </div>
@@ -92,7 +95,7 @@
 
     <section class="hero" aria-label="Podcast-Intro">
       <h2>🎧 Hören & Lernen</h2>
-      <p class="muted">Hier findest du den Podcast. Drücke auf ▶️ und höre zu. Es gibt Beispiele und Mini-Übungen.</p>
+      <p class="muted">Hier findest du unseren Lernpodcast in einfacher Sprache. Drücke auf ▶️ und höre zu. Es gibt Beispiele und Mini-Übungen.</p>
       <div class="chips">
         <span class="chip">Prüfung: Erörterung</span>
       </div>
@@ -253,6 +256,20 @@
       return String(s).replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
     }
 
+    /* ======= Robust: IDB-Fähigkeit testen (wichtig für iOS/Privatmodus) ======= */
+    async function supportsIDB(){
+      try{
+        if(!('indexedDB' in window)) return false;
+        const req = indexedDB.open('__schuelerpodcast_test__',1);
+        return await new Promise(res=>{
+          req.onsuccess = ()=>{ try{ req.result.close(); indexedDB.deleteDatabase('__schuelerpodcast_test__'); }catch{} res(true); };
+          req.onerror   = ()=>res(false);
+          req.onblocked = ()=>res(false);
+        });
+      }catch{ return false; }
+    }
+    let IDB_OK = false;
+
     /* ================== Persistenz (Episodes) ================== */
     const store = {
       get(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || { episodes: [] } }catch(e){ return { episodes: [] } } },
@@ -316,14 +333,14 @@
         const source = audio.querySelector('source');
 
         if(isLocal){
-          // 1) Sofortige Vorschau, falls vorhanden
+          // Sofortige Vorschau, falls vorhanden
           if(ep.tempUrl){
             try{
               source.src = ep.tempUrl;
               audio.load();
             }catch(_){}
           }
-          // 2) Dann persistente IDB-Version nachladen
+          // Persistente IDB-Version nachladen
           const key = ep.src.slice(6);
           try{
             const blob = await idbGet(key);
@@ -397,6 +414,10 @@
           const qs = u.searchParams.toString();
           history.replaceState(null,'', u.pathname + (qs?`?${qs}`:'') + u.hash);
         }
+        // Hash-Variante ebenfalls entfernen
+        if((location.hash||'').startsWith('#admin=')){
+          history.replaceState(null,'', u.pathname + (u.search||''));
+        }
       }catch(e){}
     }
     function checkSessionOpen(){
@@ -404,7 +425,9 @@
     }
     function checkParamOpen(){
       const url = new URL(location.href);
-      const code = url.searchParams.get('admin');
+      const codeQ = url.searchParams.get('admin');
+      const codeH = (location.hash||'').startsWith('#admin=') ? location.hash.replace('#admin=','') : '';
+      const code = codeQ || codeH;
       const c = cfg.get();
       if(code && c.adminToken && code === c.adminToken){ openAdmin(); }
     }
@@ -428,6 +451,12 @@
       const file  = $('#fFile').files[0];
 
       if(!title){ alert('Bitte Titel eingeben.'); return; }
+
+      // NEU: Wenn nur Datei gewählt und IDB nicht verfügbar -> abbrechen mit Hinweis
+      if(file && !url && !IDB_OK){
+        alert('Auf diesem Gerät/Browser können lokale Dateien nicht dauerhaft gespeichert werden. Lade die Audio-Datei bitte irgendwo hoch und nutze die URL, damit die Folge auf allen Geräten sichtbar ist.');
+        return;
+      }
 
       let src='', local=false, mime='', tempUrl='';
 
@@ -476,7 +505,7 @@
     $('#wipeAll').addEventListener('click', async ()=>{
       if(confirm('Wirklich alle Folgen und lokale Dateien löschen?')){
         store.clear();
-        await idbClear();
+        try{ await idbClear(); }catch{}
         render();
       }
     });
@@ -525,7 +554,31 @@
     /* ================== Init ================== */
     $('#year').textContent = new Date().getFullYear();
 
+    // Optional: Desktop-Layout auf allen Geräten erzwingen via ?desktop=1 oder #desktop=1
+    (function maybeForceDesktop(){
+      try{
+        const u = new URL(location.href);
+        const byQuery = u.searchParams.get('desktop') === '1';
+        const byHash  = (location.hash||'').includes('desktop=1');
+        if(byQuery || byHash){ document.documentElement.classList.add('force-desktop'); }
+      }catch{}
+    })();
+
     (async function init(){
+      IDB_OK = await supportsIDB();
+
+      // Wenn IDB nicht verfügbar: sichtbarer Hinweis im Admin-Bereich
+      if(!IDB_OK){
+        const adminBox = document.getElementById('admin');
+        if(adminBox){
+          const warn = document.createElement('div');
+          warn.className = 'tag';
+          warn.style.cssText='display:block;margin:8px 0;color:#ffd2d2;border-color:#7a1f1f;background:rgba(255,0,0,.08)';
+          warn.textContent = 'Hinweis: Lokale Audios können auf diesem Gerät/Browser nicht dauerhaft gespeichert werden. Bitte nutze eine URL für geräteübergreifende Nutzung.';
+          adminBox.insertBefore(warn, adminBox.firstChild);
+        }
+      }
+
       if(!cfg.isConfigured()){ showSetup(); }
       await render();
       renderLogo();
