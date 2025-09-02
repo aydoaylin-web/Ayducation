@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>🎙️ Schülerpodcast – Argumentation einfach erklärt</title>
-  <meta name="description" content="Schülerpodcast mit einfachen Erklärungen, Übungen und Beispielen. Öffentlich abspielbar. Admin-Upload sichtbar (ohne PIN), M4A/MP3 unterstützt.">
+  <meta name="description" content="Schülerpodcast mit einfachen Erklärungen, Übungen und Beispielen. Öffentlich abspielbar. Admin-Upload per PIN, M4A/MP3 unterstützt.">
   <style>
     :root{
       --bg:#0b1320; --panel:#0f2036; --ink:#eaf2ff; --muted:#a9bfd6; --accent:#6bdcff;
       --ok:#22c55e; --warn:#ef4444; --line:#1b2e4a; --chip:#173253; --shadow:0 8px 28px rgba(0,0,0,.35);
-      --radius: 16px; --radius-lg: 22px; --maxw: 1100px;
+      --radius:16px; --radius-lg:22px; --maxw:1100px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -29,7 +29,7 @@
     .chip{background:var(--chip);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--muted)}
 
     .grid{display:grid;grid-template-columns: 1.3fr .7fr;gap:18px;margin-top:22px}
-    @media (max-width: 880px){ .grid{grid-template-columns: 1fr;}}
+    @media (max-width:880px){.grid{grid-template-columns:1fr}}
 
     .panel{background:rgba(8,18,36,.6);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 8px;box-shadow:var(--shadow)}
     .panel h3{margin:4px 0 12px;font-size:18px}
@@ -44,27 +44,32 @@
     audio[controls]{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
 
     .row{display:flex;gap:10px;align-items:center}
-    .row > *{flex:1}
+    .row>*{flex:1}
     label{font-size:13px;color:var(--muted)}
-    input[type="text"], textarea, input[type="url"], input[type="password"], input[type="file"]{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px;width:100%}
+    input[type="text"],textarea,input[type="url"],input[type="password"],input[type="file"]{
+      background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px;width:100%
+    }
     textarea{min-height:96px;resize:vertical}
     .btn{border:1px solid var(--line);background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02));color:var(--ink);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
     .btn:hover{transform:translateY(-1px)}
     .btn.primary{border-color:#1c3d63;background:linear-gradient(180deg,#2a83ae,#1f4b7a)}
     .btn.ghost{background:transparent}
     .danger{color:#ffd2d2}
-
     .tag{font-size:12px;background:rgba(255,255,255,.06);border:1px solid var(--line);padding:3px 8px;border-radius:999px;color:var(--muted)}
 
-    .admin{display:block;margin-top:10px}
-    details{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px}
-    summary{cursor:pointer}
+    /* Admin & Gate */
+    .admin{display:none;margin-top:10px}
+    .admin.active{display:block}
+    .pin-gate{display:block;margin-top:6px}
+    .pin-msg{font-size:13px;color:var(--muted);margin-top:6px}
 
-    .empty{color:var(--muted);text-align:center;padding:22px 8px;border:1px dashed var(--line);border-radius:14px}
-
-    footer{margin:24px 0 16px;color:var(--muted);font-size:13px;text-align:center}
-
-    /* (deaktiviertes Setup/Pin-Overlay entfernt) */
+    /* Setup-Overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .overlay.active{display:flex}
+    .setup{max-width:640px;width:100%;background:rgba(8,18,36,.94);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:18px}
+    .setup h3{margin:6px 0 6px;font-size:20px}
+    .hint{font-size:13px;color:var(--muted)}
+    .secret{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:13px;background:rgba(255,255,255,.06);border:1px solid var(--line);padding:8px;border-radius:10px;word-break:break-all}
   </style>
 </head>
 <body>
@@ -73,7 +78,6 @@
       <div class="brand">
         <div class="logo" id="logoBox" aria-hidden="true">
           <img id="logoImg" src="" alt="Podcast Logo" style="max-width:100%;max-height:100%;display:none;border-radius:12px"/>
-          <!-- Platzhalter-Icon -->
           <svg id="logoSvg" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="10" stroke="white" opacity=".5"/>
             <path d="M8 9v6l6-3-6-3z" fill="white"/>
@@ -84,7 +88,6 @@
           <div class="muted">Argumentation & Erörterung – einfach erklärt</div>
         </div>
       </div>
-      <!-- Admin-Schalter nicht mehr nötig -->
     </header>
 
     <section class="hero" aria-label="Podcast-Intro">
@@ -107,36 +110,32 @@
         </div>
       </section>
 
-      <aside class="panel" aria-label="Infos">
-        <h3>Worum geht's?</h3>
-        <p>Wir erklären, wie man Argumente bildet und eine Erörterung schreibt. Mit Beispielen, einfachen Wörtern und kurzen Übungen.</p>
-        <details>
-          <summary>Tipps zum Hören</summary>
-          <ul>
-            <li>Drücke auf Pause ⏸️ und beantworte Fragen im Kopf.</li>
-            <li>Höre eine Stelle noch einmal, wenn sie schwer ist.</li>
-            <li>Notiere neue Wörter.</li>
-          </ul>
-        </details>
+      <aside class="panel" aria-label="Admin & Infos">
+        <!-- 🔼 PIN-Gate ganz oben (Admin "hoch") -->
+        <h3>🔐 Admin-Zugang</h3>
+        <div class="pin-gate" id="pinGate">
+          <label for="adminCode">PIN eingeben</label>
+          <div class="row">
+            <input id="adminCode" type="password" inputmode="numeric" placeholder="PIN" maxlength="24" />
+            <button class="btn primary" id="openAdminBtn">Öffnen</button>
+          </div>
+          <div class="pin-msg" id="pinMsg"></div>
+        </div>
 
-        <details>
-          <summary>Transkript (optional einblendbar)</summary>
-          <p class="muted">Du kannst beim Upload ein Transkript mitgeben. Es wird hier pro Folge angezeigt.</p>
-        </details>
-
-        <!-- Admin-Bereich: IMMER SICHTBAR -->
+        <!-- Admin-Bereich (zuerst versteckt) -->
         <div class="admin" id="admin">
           <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
           <h3>🔒 Admin – Folge hinzufügen</h3>
-          <p class="muted">Dieser Bereich ist sichtbar. Für die Veröffentlichung einfach in deinem Repo lassen; Lernende können hier nichts speichern, außer sie haben Schreibrechte im Browser (nur lokal).</p>
+          <p class="muted">Nur für Lehrkräfte. Dateien lokal (nur dieses Gerät) oder per URL (global) hinzufügen.</p>
 
-          <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
           <h3>🎨 Logo hochladen</h3>
           <input id="fLogo" type="file" accept="image/png,image/jpeg,image/svg+xml" />
-          <button class="btn primary" id="saveLogo">Logo speichern</button>
-          <button class="btn danger" id="deleteLogo">Logo löschen</button>
+          <div class="row" style="margin-top:8px">
+            <button class="btn primary" id="saveLogo">Logo speichern</button>
+            <button class="btn danger" id="deleteLogo">Logo löschen</button>
+          </div>
 
-          <div class="row" style="margin-top:10px">
+          <div class="row" style="margin-top:14px">
             <div>
               <label>Titel</label>
               <input id="fTitle" type="text" placeholder="z. B. Argument oder Erörterung" />
@@ -158,7 +157,6 @@
             <div style="flex:1;height:1px;background:var(--line)"></div>
           </div>
 
-          <!-- WICHTIG: M4A/MP4 akzeptieren -->
           <input id="fFile" type="file" accept="audio/m4a,audio/mp4,audio/x-m4a,audio/aac,audio/mpeg" />
 
           <label style="margin-top:8px;display:block">Kurzbeschreibung (optional)</label>
@@ -172,101 +170,133 @@
             <button class="btn" id="exportBtn" title="Sicherung als JSON">Export</button>
             <button class="btn danger" id="wipeAll" title="Alle Folgen löschen">Alles löschen</button>
           </div>
-          <p class="muted" style="margin-top:6px">Hinweis: Metadaten in localStorage. Lokale Dateien (Upload) in IndexedDB (nur auf diesem Gerät). Für globale Veröffentlichung: Audio ins Repo (z. B. <code>/media/</code>) und als URL eintragen.</p>
+
+          <!-- 👉 Neu: Admin verlassen Button -->
+          <div class="row" style="margin-top:10px">
+            <button class="btn ghost" id="closeAdminBtn" title="Zur öffentlichen Ansicht zurückkehren">Admin verlassen</button>
+          </div>
+
+          <p class="muted" style="margin-top:6px">
+            Metadaten in localStorage. Lokale Dateien in IndexedDB (nur dieses Gerät).
+            Für global: Audio ins Repo (z. B. <code>/media/</code>) und als URL nutzen.
+          </p>
         </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+
+        <h3>Worum geht's?</h3>
+        <p>Wir erklären, wie man Argumente bildet und eine Erörterung schreibt. Mit Beispielen, einfachen Wörtern und kurzen Übungen.</p>
+        <details>
+          <summary>Tipps zum Hören</summary>
+          <ul>
+            <li>Drücke auf Pause ⏸️ und beantworte Fragen im Kopf.</li>
+            <li>Höre eine Stelle noch einmal, wenn sie schwer ist.</li>
+            <li>Notiere neue Wörter.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Transkript (optional einblendbar)</summary>
+          <p class="muted">Du kannst beim Upload ein Transkript mitgeben. Es wird hier pro Folge angezeigt.</p>
+        </details>
       </aside>
     </div>
 
     <footer>
-      © <span id="year"></span> Schülerpodcast · Öffentliche Abspielfunktion · Admin sichtbar
+      © <span id="year"></span> Schülerpodcast · Öffentliche Abspielfunktion
     </footer>
   </div>
 
+  <!-- ========== Setup-Overlay (nur beim ersten Mal) ========== -->
+  <div class="overlay" id="setupOverlay">
+    <div class="setup">
+      <h3>Ersteinrichtung</h3>
+      <p class="hint">Lege deine Admin-PIN fest. Diese wird lokal verschlüsselt gespeichert.</p>
+      <label>PIN</label>
+      <input id="setupPin1" type="password" inputmode="numeric" placeholder="PIN" />
+      <label style="margin-top:8px">PIN wiederholen</label>
+      <input id="setupPin2" type="password" inputmode="numeric" placeholder="PIN wiederholen" />
+      <div class="hint" style="margin-top:8px">
+        (Optional) Geheime Admin-URL generieren, um das PIN-Fenster direkt zu öffnen.
+      </div>
+      <label style="display:flex;gap:10px;align-items:center;margin-top:6px">
+        <input id="createSecret" type="checkbox" />
+        <span>Geheime URL erzeugen</span>
+      </label>
+      <div id="secretBox" style="display:none;margin-top:8px">
+        <div class="hint">Geheime URL (merke/kopiere):</div>
+        <div class="secret" id="secretUrl">–</div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="saveSetup">Setup speichern</button>
+        <button class="btn" id="cancelSetup">Abbrechen</button>
+      </div>
+      <div id="setupMsg" class="hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+
   <script>
-    // ======= Keys & Helpers =======
+    /* ================== Config & Helpers ================== */
+    const CONFIG_KEY = 'schuelerpodcast.config.v1'; // { pinHash, adminToken? }
     const STORE_KEY  = 'schuelerpodcast.v1';
     const LOGO_KEY   = 'schuelerpodcast.logo';
 
     const $  = (sel, p=document) => p.querySelector(sel);
     const $$ = (sel, p=document) => Array.from(p.querySelectorAll(sel));
 
+    function hash(s){ // einfache Einweg-Base64 (nur Obfuskation)
+      try{ return btoa(unescape(encodeURIComponent(String(s)))) }catch(e){ return btoa(String(s)) }
+    }
+    const cfg = {
+      get(){ try{ return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {} }catch(e){ return {} } },
+      set(v){ localStorage.setItem(CONFIG_KEY, JSON.stringify(v)); },
+      isConfigured(){ const c=this.get(); return !!c.pinHash; }
+    };
+
     function fmtDate(ts){
-      try{ return new Date(ts).toLocaleDateString('de-DE', {year:'numeric', month:'short', day:'2-digit'}) }catch(e){ return '' }
+      try{ return new Date(ts).toLocaleDateString('de-DE',{year:'numeric',month:'short',day:'2-digit'}) }catch(e){ return '' }
     }
     function escapeHtml(s){
-      return String(s).replace(/[&<>\"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+      return String(s).replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
     }
 
-    // ======= Persistenz (localStorage) =======
+    /* ================== Persistenz (Episodes) ================== */
     const store = {
       get(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || { episodes: [] } }catch(e){ return { episodes: [] } } },
       set(data){ localStorage.setItem(STORE_KEY, JSON.stringify(data)); },
       clear(){ localStorage.removeItem(STORE_KEY); }
     };
 
-    // ======= IndexedDB für lokale Audiodateien (M4A/MP3) =======
-    const DB_NAME = 'schuelerpodcast_db';
-    const DB_STORE = 'files';
-    function idbOpen(){
-      return new Promise((res, rej)=>{
-        const rq = indexedDB.open(DB_NAME, 1);
-        rq.onupgradeneeded = () => rq.result.createObjectStore(DB_STORE);
-        rq.onsuccess = () => res(rq.result);
-        rq.onerror = () => rej(rq.error);
-      });
-    }
-    async function idbPut(key, blob){
-      const db = await idbOpen();
-      return new Promise((res, rej)=>{
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).put(blob, key);
-        tx.oncomplete = () => res();
-        tx.onerror = () => rej(tx.error);
-      });
-    }
-    async function idbGet(key){
-      const db = await idbOpen();
-      return new Promise((res, rej)=>{
-        const tx = db.transaction(DB_STORE, 'readonly');
-        const r = tx.objectStore(DB_STORE).get(key);
-        r.onsuccess = () => res(r.result);
-        r.onerror = () => rej(r.error);
-      });
-    }
-    async function idbClear(){
-      const db = await idbOpen();
-      return new Promise((res, rej)=>{
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        const r = tx.objectStore(DB_STORE).clear();
-        r.onsuccess = () => res();
-        r.onerror = () => rej(r.error);
-      });
-    }
+    /* ================== IndexedDB für lokale Audios ================== */
+    const DB_NAME='schuelerpodcast_db', DB_STORE='files';
+    function idbOpen(){ return new Promise((res,rej)=>{ const rq=indexedDB.open(DB_NAME,1); rq.onupgradeneeded=()=>rq.result.createObjectStore(DB_STORE); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+    async function idbPut(key, blob){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readwrite'); tx.objectStore(DB_STORE).put(blob,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+    async function idbGet(key){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readonly'); const r=tx.objectStore(DB_STORE).get(key); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+    async function idbClear(){ const db=await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(DB_STORE,'readwrite'); const r=tx.objectStore(DB_STORE).clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
 
-    // ======= MIME-Helfer =======
+    /* ================== MIME ================== */
     function inferMimeFromUrl(u=''){
-      const url = (u||'').toLowerCase().split('?')[0];
+      const url=(u||'').toLowerCase().split('?')[0];
       if(url.endsWith('.mp3')) return 'audio/mpeg';
       if(url.endsWith('.m4a') || url.endsWith('.mp4')) return 'audio/mp4';
-      return ''; // Browser rät
+      return '';
     }
 
-    // ======= Rendering =======
+    /* ================== Rendering ================== */
     async function render(){
       const data = store.get();
       const list = $('#episodes');
       list.innerHTML = '';
-      if(!data.episodes.length){ $('#emptyState').hidden = false; return }
-      $('#emptyState').hidden = true;
+      if(!data.episodes.length){ $('#emptyState').hidden=false; return; }
+      $('#emptyState').hidden=true;
 
       for(let idx=0; idx<data.episodes.length; idx++){
         const ep = data.episodes[idx];
         const card = document.createElement('article');
         card.className = 'card';
 
-        const isLocal = ep.src && ep.src.startsWith('idb://');
-        const initialSrc = isLocal ? '' : (ep.src || '');
-        const mime      = ep.mime || inferMimeFromUrl(ep.src) || 'audio/mp4'; // default gut für m4a
+        const isLocal   = ep.src && ep.src.startsWith('idb://');
+        const initialSrc= isLocal ? '' : (ep.src || '');
+        const mime      = ep.mime || inferMimeFromUrl(ep.src) || 'audio/mp4';
 
         card.innerHTML = `
           <div class="row" style="align-items:flex-start">
@@ -294,7 +324,6 @@
               const audio = card.querySelector('audio');
               const source = audio.querySelector('source');
               source.src = url;
-              // Setze type auf Blob.type, falls vorhanden (z. B. audio/mp4)
               if(blob.type) source.type = blob.type;
               audio.load();
             } else {
@@ -307,34 +336,21 @@
       }
     }
 
-    // ======= Logo-Upload & Anzeige =======
+    /* ================== Logo ================== */
     $('#saveLogo').addEventListener('click', async ()=>{
       const file = $('#fLogo').files[0];
       if(!file){ alert('Bitte eine Bilddatei auswählen.'); return; }
       const reader = new FileReader();
-      reader.onload = ()=>{
-        localStorage.setItem(LOGO_KEY, reader.result); // Base64 speichern
-        renderLogo();
-        alert('Logo gespeichert.');
-      };
+      reader.onload = ()=>{ localStorage.setItem(LOGO_KEY, reader.result); renderLogo(); alert('Logo gespeichert.'); };
       reader.readAsDataURL(file);
     });
-
     function renderLogo(){
       const data = localStorage.getItem(LOGO_KEY);
-      const img = $('#logoImg');
-      const svg = $('#logoSvg');
+      const img = $('#logoImg'), svg = $('#logoSvg');
       if(!img || !svg) return;
-      if(data){
-        img.src = data;
-        img.style.display = 'block';
-        svg.style.display = 'none';
-      } else {
-        img.style.display = 'none';
-        svg.style.display = 'block';
-      }
+      if(data){ img.src=data; img.style.display='block'; svg.style.display='none'; }
+      else { img.style.display='none'; svg.style.display='block'; }
     }
-
     $('#deleteLogo').addEventListener('click', ()=>{
       if(confirm('Möchtest du das Logo wirklich löschen?')){
         localStorage.removeItem(LOGO_KEY);
@@ -343,7 +359,58 @@
       }
     });
 
-    // ======= Upload / Hinzufügen =======
+    /* ================== Admin-Gate ================== */
+    const pinGate   = $('#pinGate');
+    const adminWrap = $('#admin');
+    const pinMsg    = $('#pinMsg');
+
+    function openAdmin(){
+      adminWrap.classList.add('active');
+      pinGate.style.display = 'none';
+      sessionStorage.setItem('schuelerpodcast.pin.ok','1'); // Session-Merkung
+    }
+
+    // 👉 Neu: Admin wieder schließen / abmelden
+    function closeAdmin(){
+      adminWrap.classList.remove('active');
+      pinGate.style.display = 'block';
+      sessionStorage.removeItem('schuelerpodcast.pin.ok');
+      const code = $('#adminCode');
+      if(code) code.value = '';
+      pinMsg.textContent = '';
+      // optional: ?admin= aus der URL entfernen
+      try{
+        const u = new URL(location.href);
+        if(u.searchParams.has('admin')){
+          u.searchParams.delete('admin');
+          const qs = u.searchParams.toString();
+          history.replaceState(null,'', u.pathname + (qs?`?${qs}`:'') + u.hash);
+        }
+      }catch(e){}
+    }
+
+    function checkSessionOpen(){
+      if(sessionStorage.getItem('schuelerpodcast.pin.ok')==='1'){ openAdmin(); }
+    }
+    function checkParamOpen(){
+      const url = new URL(location.href);
+      const code = url.searchParams.get('admin');
+      const c = cfg.get();
+      if(code && c.adminToken && code === c.adminToken){ openAdmin(); }
+    }
+
+    $('#openAdminBtn').addEventListener('click', ()=>{
+      const v = ($('#adminCode').value || '').trim();
+      if(!v){ pinMsg.textContent = 'Bitte PIN eingeben.'; return; }
+      const ok = hash(v) === (cfg.get().pinHash||'');
+      if(ok){ openAdmin(); }
+      else { pinMsg.textContent = '❌ Falsche PIN.'; }
+    });
+
+    // 👉 Neu: Button-Handler für „Admin verlassen“
+    $('#closeAdminBtn').addEventListener('click', closeAdmin);
+
+    /* ================== Upload / Hinzufügen ================== */
     $('#addEpisode').addEventListener('click', async ()=>{
       const title = $('#fTitle').value.trim();
       const len   = $('#fLen').value.trim();
@@ -352,21 +419,17 @@
       const txt   = $('#fTxt').value.trim();
       const file  = $('#fFile').files[0];
 
-      if(!title){ alert('Bitte Titel eingeben.'); return }
+      if(!title){ alert('Bitte Titel eingeben.'); return; }
 
-      let src = '';
-      let local = false;
-      let mime = '';
-
+      let src='', local=false, mime='';
       if(url){
-        src  = url;                           // direkte URL (mp3 oder m4a)
-        mime = inferMimeFromUrl(url) || '';   // Browser darf raten
+        src = url;
+        mime = inferMimeFromUrl(url) || '';
       } else if(file){
         const key = `audio_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         await idbPut(key, file);
-        src  = `idb://${key}`;
+        src = `idb://${key}`;
         local = true;
-        // File.type z. B. "audio/mp4" für m4a, "audio/mpeg" für mp3
         mime = file.type || '';
       } else {
         alert('Bitte Audio-URL einfügen oder Datei auswählen.');
@@ -374,17 +437,17 @@
       }
 
       const data = store.get();
-      data.episodes.unshift({ title, length: len, src, mime, desc, txt, local, ts: Date.now() });
+      data.episodes.unshift({ title, length:len, src, mime, desc, txt, local, ts: Date.now() });
       store.set(data);
 
-      ['#fTitle','#fLen','#fUrl','#fDesc','#fTxt'].forEach(s=> $(s).value = '');
-      $('#fFile').value = '';
+      ['#fTitle','#fLen','#fUrl','#fDesc','#fTxt'].forEach(s=> $(s).value='');
+      $('#fFile').value='';
 
       await render();
       alert('Folge gespeichert.');
     });
 
-    // ======= Export / Wipe =======
+    /* ================== Export / Wipe ================== */
     $('#exportBtn').addEventListener('click', ()=>{
       const blob = new Blob([JSON.stringify(store.get(), null, 2)], {type:'application/json'});
       const a = document.createElement('a');
@@ -393,7 +456,6 @@
       a.click();
       URL.revokeObjectURL(a.href);
     });
-
     $('#wipeAll').addEventListener('click', async ()=>{
       if(confirm('Wirklich alle Folgen und lokale Dateien löschen?')){
         store.clear();
@@ -402,12 +464,62 @@
       }
     });
 
-    // ======= Init =======
+    /* ================== Setup (erste Nutzung) ================== */
+    const setupOverlay = $('#setupOverlay');
+    const setupPin1 = $('#setupPin1');
+    const setupPin2 = $('#setupPin2');
+    const createSecret = $('#createSecret');
+    const secretBox = $('#secretBox');
+    const secretUrl = $('#secretUrl');
+
+    function showSetup(){ setupOverlay.classList.add('active'); }
+    function hideSetup(){ setupOverlay.classList.remove('active'); }
+
+    function makeToken(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2); }
+
+    $('#createSecret').addEventListener('change', ()=>{
+      const on = createSecret.checked;
+      secretBox.style.display = on ? 'block' : 'none';
+      if(on){
+        const token = makeToken();
+        secretUrl.textContent = location.origin + location.pathname + `?admin=${token}`;
+        secretUrl.dataset.token = token;
+      } else {
+        secretUrl.textContent = '–';
+        delete secretUrl.dataset.token;
+      }
+    });
+
+    $('#saveSetup').addEventListener('click', ()=>{
+      const p1 = (setupPin1.value||'').trim();
+      const p2 = (setupPin2.value||'').trim();
+      if(!p1 || !p2){ $('#setupMsg').textContent = 'Bitte beide PIN-Felder ausfüllen.'; return; }
+      if(p1 !== p2){ $('#setupMsg').textContent = '❌ PINs stimmen nicht überein.'; return; }
+      const conf = cfg.get();
+      conf.pinHash = hash(p1);
+      if(createSecret.checked && secretUrl.dataset.token){ conf.adminToken = secretUrl.dataset.token; }
+      cfg.set(conf);
+      $('#setupMsg').textContent = '✔️ Gespeichert.';
+      setTimeout(()=>{ hideSetup(); }, 400);
+    });
+
+    $('#cancelSetup').addEventListener('click', ()=>{ hideSetup(); });
+
+    /* ================== Init ================== */
     $('#year').textContent = new Date().getFullYear();
 
     (async function init(){
+      // Setup erzwingen, wenn noch keine PIN existiert
+      if(!cfg.isConfigured()){ showSetup(); }
+
       await render();
       renderLogo();
+
+      // Falls Session schon verifiziert
+      checkSessionOpen();
+
+      // Optional: direkte Öffnung via ?admin=TOKEN (nur wenn im Setup erzeugt)
+      checkParamOpen();
     })();
   </script>
 </body>
