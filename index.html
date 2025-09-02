@@ -482,47 +482,6 @@
       }
     });
 
-    /* ================== Setup (erste Nutzung) ================== */
-    const setupOverlay = $('#setupOverlay');
-    const setupPin1 = $('#setupPin1');
-    const setupPin2 = $('#setupPin2');
-    const createSecret = $('#createSecret');
-    const secretBox = $('#secretBox');
-    const secretUrl = $('#secretUrl');
-
-    function showSetup(){ setupOverlay.classList.add('active'); }
-    function hideSetup(){ setupOverlay.classList.remove('active'); }
-
-    function makeToken(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2); }
-
-    $('#createSecret').addEventListener('change', ()=>{
-      const on = createSecret.checked;
-      secretBox.style.display = on ? 'block' : 'none';
-      if(on){
-        const token = makeToken();
-        secretUrl.textContent = location.origin + location.pathname + `?admin=${token}`;
-        secretUrl.dataset.token = token;
-      } else {
-        secretUrl.textContent = '–';
-        delete secretUrl.dataset.token;
-      }
-    });
-
-    $('#saveSetup').addEventListener('click', ()=>{
-      const p1 = (setupPin1.value||'').trim();
-      const p2 = (setupPin2.value||'').trim();
-      if(!p1 || !p2){ $('#setupMsg').textContent = 'Bitte beide PIN-Felder ausfüllen.'; return; }
-      if(p1 !== p2){ $('#setupMsg').textContent = '❌ PINs stimmen nicht überein.'; return; }
-      const conf = cfg.get();
-      conf.pinHash = hash(p1);
-      if(createSecret.checked && secretUrl.dataset.token){ conf.adminToken = secretUrl.dataset.token; }
-      cfg.set(conf);
-      $('#setupMsg').textContent = '✔️ Gespeichert.';
-      setTimeout(()=>{ hideSetup(); }, 400);
-    });
-
-    $('#cancelSetup').addEventListener('click', ()=>{ hideSetup(); });
-
     /* ================== Init ================== */
     $('#year').textContent = new Date().getFullYear();
 
