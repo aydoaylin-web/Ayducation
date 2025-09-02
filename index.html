@@ -203,34 +203,6 @@
     </footer>
   </div>
 
-  <!-- ========== Setup-Overlay (nur beim ersten Mal) ========== -->
-  <div class="overlay" id="setupOverlay">
-    <div class="setup">
-      <h3>Ersteinrichtung</h3>
-      <p class="hint">Lege deine Admin-PIN fest. Diese wird lokal verschlüsselt gespeichert.</p>
-      <label>PIN</label>
-      <input id="setupPin1" type="password" inputmode="numeric" placeholder="PIN" />
-      <label style="margin-top:8px">PIN wiederholen</label>
-      <input id="setupPin2" type="password" inputmode="numeric" placeholder="PIN wiederholen" />
-      <div class="hint" style="margin-top:8px">
-        (Optional) Geheime Admin-URL generieren, um das PIN-Fenster direkt zu öffnen.
-      </div>
-      <label style="display:flex;gap:10px;align-items:center;margin-top:6px">
-        <input id="createSecret" type="checkbox" />
-        <span>Geheime URL erzeugen</span>
-      </label>
-      <div id="secretBox" style="display:none;margin-top:8px">
-        <div class="hint">Geheime URL (merke/kopiere):</div>
-        <div class="secret" id="secretUrl">–</div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn primary" id="saveSetup">Setup speichern</button>
-        <button class="btn" id="cancelSetup">Abbrechen</button>
-      </div>
-      <div id="setupMsg" class="hint" style="margin-top:8px"></div>
-    </div>
-  </div>
-
   <script>
     /* ================== Config & Helpers ================== */
     const CONFIG_KEY = 'schuelerpodcast.config.v1'; // { pinHash, adminToken? }
