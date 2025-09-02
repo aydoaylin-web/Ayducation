@@ -111,7 +111,6 @@
       </section>
 
       <aside class="panel" aria-label="Admin & Infos">
-        <!-- 🔼 PIN-Gate ganz oben (Admin "hoch") -->
         <h3>🔐 Admin-Zugang</h3>
         <div class="pin-gate" id="pinGate">
           <label for="adminCode">PIN eingeben</label>
@@ -122,7 +121,6 @@
           <div class="pin-msg" id="pinMsg"></div>
         </div>
 
-        <!-- Admin-Bereich (zuerst versteckt) -->
         <div class="admin" id="admin">
           <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
           <h3>🔒 Admin – Folge hinzufügen</h3>
@@ -171,7 +169,6 @@
             <button class="btn danger" id="wipeAll" title="Alle Folgen löschen">Alles löschen</button>
           </div>
 
-          <!-- 👉 Neu: Admin verlassen Button -->
           <div class="row" style="margin-top:10px">
             <button class="btn ghost" id="closeAdminBtn" title="Zur öffentlichen Ansicht zurückkehren">Admin verlassen</button>
           </div>
@@ -243,7 +240,7 @@
     const $  = (sel, p=document) => p.querySelector(sel);
     const $$ = (sel, p=document) => Array.from(p.querySelectorAll(sel));
 
-    function hash(s){ // einfache Einweg-Base64 (nur Obfuskation)
+    function hash(s){
       try{ return btoa(unescape(encodeURIComponent(String(s)))) }catch(e){ return btoa(String(s)) }
     }
     const cfg = {
@@ -295,7 +292,7 @@
         card.className = 'card';
 
         const isLocal   = ep.src && ep.src.startsWith('idb://');
-        const initialSrc= isLocal ? '' : (ep.src || '');
+        const initialSrc= (isLocal ? '' : (ep.src || ''));
         const mime      = ep.mime || inferMimeFromUrl(ep.src) || 'audio/mp4';
 
         card.innerHTML = `
@@ -311,27 +308,47 @@
           </audio>
           ${ep.desc ? `<div>${escapeHtml(ep.desc)}</div>`:''}
           ${ep.txt ? `<details><summary>Transkript anzeigen</summary><div style="white-space:pre-wrap">${escapeHtml(ep.txt)}</div></details>`:''}
-          <div class="meta">Quelle: ${isLocal ? 'Lokal (persistenter Gerätespeicher)' : 'URL'}</div>
+          <div class="meta">Quelle: ${
+            isLocal ? (ep.tempUrl && !initialSrc ? 'Lokale Vorschau (wird gespeichert)…' : 'Lokal (persistenter Gerätespeicher)')
+                    : (ep.tempUrl && !ep.src ? 'Lokale Vorschau (nicht persistent)' : 'URL')
+          }</div>
         `;
         list.appendChild(card);
 
+        const audio = card.querySelector('audio');
+        const source = audio.querySelector('source');
+
         if(isLocal){
+          // 1) Sofortige Vorschau, falls vorhanden
+          if(ep.tempUrl){
+            try{
+              source.src = ep.tempUrl;
+              audio.load();
+            }catch(_){}
+          }
+          // 2) Dann persistente IDB-Version nachladen
           const key = ep.src.slice(6);
           try{
             const blob = await idbGet(key);
             if(blob){
-              const url = URL.createObjectURL(blob);
-              const audio = card.querySelector('audio');
-              const source = audio.querySelector('source');
-              source.src = url;
+              const dbUrl = URL.createObjectURL(blob);
+              source.src = dbUrl;                 // ersetzt ggf. tempUrl
               if(blob.type) source.type = blob.type;
               audio.load();
             } else {
               card.querySelector('.meta').insertAdjacentHTML('beforeend',' · ⚠️ Audiodatei nicht gefunden');
             }
           }catch(e){
-            card.querySelector('.meta').insertAdjacentHTML('beforeend',' · ⚠️ Fehler beim Laden');
+            card.querySelector('.meta').insertAdjacentHTML('beforeend',' · ⚠️ Fehler beim Laden (IDB)');
           }
+        } else if (ep.src) {
+          // externe URL – already set via initialSrc
+        } else if (ep.tempUrl) {
+          // Fallback, wenn IDB blockiert war und wir nur eine Vorschau haben
+          try{
+            source.src = ep.tempUrl;
+            audio.load();
+          }catch(_){}
         }
       }
     }
@@ -367,10 +384,8 @@
     function openAdmin(){
       adminWrap.classList.add('active');
       pinGate.style.display = 'none';
-      sessionStorage.setItem('schuelerpodcast.pin.ok','1'); // Session-Merkung
+      sessionStorage.setItem('schuelerpodcast.pin.ok','1');
     }
-
-    // 👉 Neu: Admin wieder schließen / abmelden
     function closeAdmin(){
       adminWrap.classList.remove('active');
       pinGate.style.display = 'block';
@@ -378,7 +393,6 @@
       const code = $('#adminCode');
       if(code) code.value = '';
       pinMsg.textContent = '';
-      // optional: ?admin= aus der URL entfernen
       try{
         const u = new URL(location.href);
         if(u.searchParams.has('admin')){
@@ -388,7 +402,6 @@
         }
       }catch(e){}
     }
-
     function checkSessionOpen(){
       if(sessionStorage.getItem('schuelerpodcast.pin.ok')==='1'){ openAdmin(); }
     }
@@ -406,8 +419,6 @@
       if(ok){ openAdmin(); }
       else { pinMsg.textContent = '❌ Falsche PIN.'; }
     });
-
-    // 👉 Neu: Button-Handler für „Admin verlassen“
     $('#closeAdminBtn').addEventListener('click', closeAdmin);
 
     /* ================== Upload / Hinzufügen ================== */
@@ -421,23 +432,32 @@
 
       if(!title){ alert('Bitte Titel eingeben.'); return; }
 
-      let src='', local=false, mime='';
+      let src='', local=false, mime='', tempUrl='';
+
       if(url){
         src = url;
         mime = inferMimeFromUrl(url) || '';
       } else if(file){
-        const key = `audio_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        await idbPut(key, file);
-        src = `idb://${key}`;
-        local = true;
         mime = file.type || '';
+        tempUrl = URL.createObjectURL(file); // sofortige Vorschau
+        local = true;
+
+        try{
+          const key = `audio_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          await idbPut(key, file);          // Persistenz
+          src = `idb://${key}`;
+        }catch(e){
+          console.warn('IndexedDB nicht verfügbar. Fallback auf ObjectURL.', e);
+          src = tempUrl;                    // nicht persistent
+          local = false;
+        }
       } else {
         alert('Bitte Audio-URL einfügen oder Datei auswählen.');
         return;
       }
 
       const data = store.get();
-      data.episodes.unshift({ title, length:len, src, mime, desc, txt, local, ts: Date.now() });
+      data.episodes.unshift({ title, length:len, src, mime, desc, txt, local, tempUrl, ts: Date.now() });
       store.set(data);
 
       ['#fTitle','#fLen','#fUrl','#fDesc','#fTxt'].forEach(s=> $(s).value='');
@@ -509,16 +529,10 @@
     $('#year').textContent = new Date().getFullYear();
 
     (async function init(){
-      // Setup erzwingen, wenn noch keine PIN existiert
       if(!cfg.isConfigured()){ showSetup(); }
-
       await render();
       renderLogo();
-
-      // Falls Session schon verifiziert
       checkSessionOpen();
-
-      // Optional: direkte Öffnung via ?admin=TOKEN (nur wenn im Setup erzeugt)
       checkParamOpen();
     })();
   </script>
