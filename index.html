@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎙️ Schülerpodcast – Argumentation einfach erklärt</title>
+  <meta name="description" content="Schülerpodcast mit einfachen Erklärungen, Übungen und Beispielen. Öffentlich abspielbar. Admin-Upload über geheime URL und PIN.">
+  <style>
+    :root{
+      --bg:#0b1320; --panel:#0f2036; --ink:#eaf2ff; --muted:#a9bfd6; --accent:#6bdcff;
+      --ok:#22c55e; --warn:#ef4444; --line:#1b2e4a; --chip:#173253; --shadow:0 8px 28px rgba(0,0,0,.35);
+      --radius: 16px; --radius-lg: 22px; --maxw: 1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 1200px at 15% 0%, #103058 0%, #0b1320 45%, #081120 100%);color:var(--ink);font:16px/1.6 "Inter", system-ui, Segoe UI, Roboto, Arial, sans-serif}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:24px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg, #27c3ff, #6bdcff);display:grid;place-items:center;box-shadow:var(--shadow)}
+    .logo svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+    h1{margin:0;font-size:24px;letter-spacing:.2px}
+    .muted{color:var(--muted)}
+
+    .hero{margin-top:8px;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:var(--radius-lg);padding:22px 22px 18px;box-shadow:var(--shadow)}
+    .hero h2{margin:0 0 8px;font-size:22px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .chip{background:var(--chip);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns: 1.3fr .7fr;gap:18px;margin-top:22px}
+    @media (max-width: 880px){ .grid{grid-template-columns: 1fr;}}
+
+    .panel{background:rgba(8,18,36,.6);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 8px;box-shadow:var(--shadow)}
+    .panel h3{margin:4px 0 12px;font-size:18px}
+
+    .episodes{display:grid;gap:12px}
+    .card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:10px}
+    .title{font-weight:700}
+    .meta{font-size:13px;color:var(--muted)}
+
+    audio{width:100%;outline:none}
+    audio::-webkit-media-controls-enclosure{border-radius:12px;background:rgba(255,255,255,.06)}
+    audio[controls]{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+
+    .row{display:flex;gap:10px;align-items:center}
+    .row > *{flex:1}
+    label{font-size:13px;color:var(--muted)}
+    input[type="text"], textarea, input[type="url"], input[type="password"], input[type="file"]{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:12px;width:100%}
+    textarea{min-height:96px;resize:vertical}
+    .btn{border:1px solid var(--line);background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02));color:var(--ink);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{border-color:#1c3d63;background:linear-gradient(180deg,#2a83ae,#1f4b7a)}
+    .btn.ghost{background:transparent}
+    .danger{color:#ffd2d2}
+
+    .tag{font-size:12px;background:rgba(255,255,255,.06);border:1px solid var(--line);padding:3px 8px;border-radius:999px;color:var(--muted)}
+
+    .admin-toggle{display:none}
+    .admin{display:none;margin-top:10px}
+    .admin.active{display:block}
+    .pin-gate{display:none}
+    .pin-gate.active{display:block}
+
+    details{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px}
+    summary{cursor:pointer}
+
+    .empty{color:var(--muted);text-align:center;padding:22px 8px;border:1px dashed var(--line);border-radius:14px}
+
+    footer{margin:24px 0 16px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* Setup-Overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .overlay.active{display:flex}
+    .setup{max-width:640px;width:100%;background:rgba(8,18,36,.9);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:18px}
+    .setup h3{margin:6px 0 6px;font-size:20px}
+    .hint{font-size:13px;color:var(--muted)}
+    .secret{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:13px;background:rgba(255,255,255,.06);border:1px solid var(--line);padding:8px;border-radius:10px;word-break:break-all}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" id="logoBox" aria-hidden="true">
+  <img id="logoImg" src="" alt="Podcast Logo" style="max-width:100%;max-height:100%;display:none;border-radius:12px"/>
+  <svg id="logoSvg" ...>...</svg>
+</div>
+        <div>
+          <h1>Schülerpodcast</h1>
+          <div class="muted">Argumentation & Erörterung – einfach erklärt</div>
+        </div>
+      </div>
+      <button class="btn ghost admin-toggle" id="adminReveal" title="Admin (PIN)">•••</button>
+    </header>
+
+    <section class="hero" aria-label="Podcast-Intro">
+      <h2>🎧 Hören & Lernen</h2>
+      <p class="muted">Hier findest du unseren Lernpodcast in einfacher Sprache. Drücke auf ▶️ und höre zu. Es gibt Beispiele und Mini-Übungen.</p>
+      <div class="chips">
+        <span class="chip">Einfache Sprache</span>
+        <span class="chip">A1/A2</span>
+        <span class="chip">Deutsch als Zweitsprache</span>
+        <span class="chip">Prüfung: Erörterung</span>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel" aria-label="Episoden">
+        <h3>Folgen</h3>
+        <div id="episodes" class="episodes"></div>
+        <div id="emptyState" class="empty" hidden>
+          Noch keine Folgen. (Nur Lehrkräfte) Füge im Admin-Bereich eine MP3 hinzu.
+        </div>
+      </section>
+
+      <aside class="panel" aria-label="Infos">
+        <h3>Worum geht's?</h3>
+        <p>Wir erklären, wie man Argumente bildet und eine Erörterung schreibt. Mit Beispielen, einfachen Wörtern und kurzen Übungen.</p>
+        <details>
+          <summary>Tipps zum Hören</summary>
+          <ul>
+            <li>Drücke auf Pause ⏸️ und beantworte Fragen im Kopf.</li>
+            <li>Höre eine Stelle noch einmal, wenn sie schwer ist.</li>
+            <li>Notiere neue Wörter.</li>
+          </ul>
+        </details>
+
+        <details>
+          <summary>Transkript (optional einblendbar)</summary>
+          <p class="muted">Du kannst beim Upload ein Transkript mitgeben. Es wird hier pro Folge angezeigt.</p>
+        </details>
+
+        <!-- PIN-Gate (wird nur über geheime URL sichtbar) -->
+        <div class="pin-gate" id="pinGate">
+          <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+          <label for="pin">PIN für Admin-Bereich</label>
+          <div class="row">
+            <input id="pin" type="password" inputmode="numeric" placeholder="PIN" maxlength="12"/>
+            <button class="btn primary" id="enterPin">Öffnen</button>
+          </div>
+          <div id="pinMsg" class="muted" style="margin-top:6px"></div>
+        </div>
+
+        <!-- Admin-Bereich -->
+        <div class="admin" id="admin">
+          <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+          <h3>🔒 Admin – Folge hinzufügen</h3>
+          <p class="muted">Nicht sichtbar für Lernende. Zugriff nur über geheime URL + PIN.</p>
+
+
+<hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+<h3>🎨 Logo hochladen</h3>
+<input id="fLogo" type="file" accept="image/png,image/jpeg,image/svg+xml" />
+<button class="btn primary" id="saveLogo">Logo speichern</button>
+<button class="btn danger" id="deleteLogo">Logo löschen</button>
+
+          <div class="row">
+            <div>
+              <label>Titel</label>
+              <input id="fTitle" type="text" placeholder="z. B. Argument oder Erörterung" />
+            </div>
+            <div>
+              <label>Dauer (optional)</label>
+              <input id="fLen" type="text" placeholder="z. B. 10:32" />
+            </div>
+          </div>
+
+          <label style="margin-top:8px;display:block">MP3-Quelle</label>
+          <div class="row">
+            <input id="fUrl" type="url" placeholder="https://…/dein-podcast.mp3 (direkte .mp3-URL, CORS erlaubt)" />
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin:8px 0">
+            <div style="flex:1;height:1px;background:var(--line)"></div>
+            <span class="tag">oder lokale Datei</span>
+            <div style="flex:1;height:1px;background:var(--line)"></div>
+          </div>
+
+          <input id="fFile" type="file" accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a" />
+
+          <label style="margin-top:8px;display:block">Kurzbeschreibung (optional)</label>
+          <textarea id="fDesc" placeholder="Worum geht's in dieser Folge?"></textarea>
+
+          <label style="margin-top:8px;display:block">Transkript (optional)</label>
+          <textarea id="fTxt" placeholder="Text, der beim Hören mitgelesen werden kann."></textarea>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="addEpisode" disabled>Folge speichern</button>
+            <button class="btn" id="exportBtn" title="Sicherung als JSON">Export</button>
+            <button class="btn danger" id="wipeAll" title="Alle Folgen löschen">Alles löschen</button>
+          </div>
+          <p class="muted" style="margin-top:6px">Hinweis: Metadaten in localStorage. MP3s dauerhaft im Gerätespeicher (IndexedDB). Online-Links müssen direkt auf <code>.mp3</code> zeigen und CORS erlauben.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      © <span id="year"></span> Schülerpodcast · Nur Abspielfunktion für Lernende (kein Upload sichtbar)
+    </footer>
+  </div>
+
+  <!-- Setup-Overlay: erscheint beim ersten Start oder solange nicht "veröffentlicht" -->
+  <div class="overlay" id="setupOverlay">
+    <div class="setup">
+      <h3>Ersteinrichtung (nur Lehrkräfte)</h3>
+      <p class="hint">Lege eine PIN fest und bestimme, wie der Admin-Bereich erreichbar ist. Danach kannst du Folgen hochladen. Du kannst den Admin-Schalter <strong>vor dem Upload</strong> verstecken und nur noch über eine geheime URL öffnen.</p>
+
+      <label style="display:block;margin-top:8px">Neue PIN</label>
+      <input id="setupPin1" type="password" placeholder="PIN festlegen" />
+      <label style="display:block;margin-top:8px">PIN wiederholen</label>
+      <input id="setupPin2" type="password" placeholder="nochmal eingeben" />
+
+      <div style="margin-top:10px">
+        <label style="display:flex;gap:10px;align-items:center">
+          <input id="hideToggle" type="checkbox" />
+          <span>Admin-Schalter <strong>verstecken</strong> (Lernende sehen keinen •••-Button)</span>
+        </label>
+      </div>
+
+      <div id="secretBox" style="display:none;margin-top:10px">
+        <div class="hint">Geheime Admin-URL (merken/kopieren):</div>
+        <div class="secret" id="secretUrl">–</div>
+        <div class="hint">Nur, wer diese URL kennt, kann den PIN-Dialog sehen.</div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="saveSetup">Setup speichern</button>
+        <button class="btn" id="cancelSetup">Abbrechen</button>
+      </div>
+      <div id="setupMsg" class="hint" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <script>
+    // ======= Keys & Helpers =======
+    const CONFIG_KEY = 'schuelerpodcast.config.v1';
+    const STORE_KEY  = 'schuelerpodcast.v1';
+    const LOGO_KEY = 'schuelerpodcast.logo';
+
+    const $ = (sel, p=document) => p.querySelector(sel);
+    const $$ = (sel, p=document) => Array.from(p.querySelectorAll(sel));
+
+    function hash(s){ // einfache Abschwächung, kein echter Schutz
+      try{ return btoa(unescape(encodeURIComponent(String(s)))) }catch(e){ return btoa(String(s)) }
+    }
+
+    const cfg = {
+      get(){ try{ return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {} }catch(e){ return {} } },
+      set(v){ localStorage.setItem(CONFIG_KEY, JSON.stringify(v)); },
+      isConfigured(){ const c=this.get(); return !!(c.pinHash && c.adminToken) },
+    };
+
+    const store = {
+      get(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || { episodes: [] } }catch(e){ return { episodes: [] } } },
+      set(data){ localStorage.setItem(STORE_KEY, JSON.stringify(data)); },
+      clear(){ localStorage.removeItem(STORE_KEY); }
+    };
+
+    // ======= IndexedDB für MP3 =======
+    const DB_NAME = 'schuelerpodcast_db';
+    const DB_STORE = 'files';
+    function idbOpen(){
+      return new Promise((res, rej)=>{
+        const rq = indexedDB.open(DB_NAME, 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore(DB_STORE);
+        rq.onsuccess = () => res(rq.result);
+        rq.onerror = () => rej(rq.error);
+      });
+    }
+    async function idbPut(key, blob){
+      const db = await idbOpen();
+      return new Promise((res, rej)=>{
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(blob, key);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    }
+    async function idbGet(key){
+      const db = await idbOpen();
+      return new Promise((res, rej)=>{
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const r = tx.objectStore(DB_STORE).get(key);
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    }
+    async function idbClear(){
+      const db = await idbOpen();
+      return new Promise((res, rej)=>{
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        const r = tx.objectStore(DB_STORE).clear();
+        r.onsuccess = () => res();
+        r.onerror = () => rej(r.error);
+      });
+    }
+
+    function fmtDate(ts){
+      try{ return new Date(ts).toLocaleDateString('de-DE', {year:'numeric', month:'short', day:'2-digit'}) }catch(e){ return '' }
+    }
+
+    // ======= Rendering =======
+    async function render(){
+      const data = store.get();
+      const list = $('#episodes');
+      list.innerHTML = '';
+      if(!data.episodes.length){ $('#emptyState').hidden = false; return }
+      $('#emptyState').hidden = true;
+
+      for(let idx=0; idx<data.episodes.length; idx++){
+        const ep = data.episodes[idx];
+        const card = document.createElement('article');
+        card.className = 'card';
+        const initialSrc = ep.src && ep.src.startsWith('idb://') ? '' : (ep.src || '');
+        card.innerHTML = `
+          <div class="row" style="align-items:flex-start">
+            <div style="flex:1">
+              <div class="title">${escapeHtml(ep.title || 'Ohne Titel')}</div>
+              <div class="meta">${ep.length ? `${escapeHtml(ep.length)} · `:''}${fmtDate(ep.ts || Date.now())}</div>
+            </div>
+            <button class="btn ghost" data-edit="${idx}" style="display:none">Bearbeiten</button>
+          </div>
+          <audio controls controlslist="nodownload noplaybackrate noremoteplayback" preload="none">
+            <source src="${initialSrc}" type="audio/mpeg" />
+            Dein Browser kann dieses Audio nicht abspielen.
+          </audio>
+          ${ep.desc ? `<div>${escapeHtml(ep.desc)}</div>`:''}
+          ${ep.txt ? `<details><summary>Transkript anzeigen</summary><div style="white-space:pre-wrap">${escapeHtml(ep.txt)}</div></details>`:''}
+          <div class="meta">Quelle: ${ep.local ? 'Lokal (persistenter Gerätespeicher)' : 'URL'}</div>
+        `;
+        list.appendChild(card);
+
+        if(ep.src && ep.src.startsWith('idb://')){
+          const key = ep.src.slice(6);
+          try{
+            const blob = await idbGet(key);
+            if(blob){
+              const url = URL.createObjectURL(blob);
+              const audio = card.querySelector('audio');
+              const source = audio.querySelector('source');
+              source.src = url;
+              audio.load();
+            } else {
+              card.querySelector('.meta').insertAdjacentHTML('beforeend',' · ⚠️ Audiodatei nicht gefunden');
+            }
+          }catch(e){
+            card.querySelector('.meta').insertAdjacentHTML('beforeend',' · ⚠️ Fehler beim Laden');
+          }
+        }
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>\"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    }
+
+    // ======= Admin-Gate & Setup =======
+    const adminReveal = $('#adminReveal');
+    const pinGate = $('#pinGate');
+    const admin = $('#admin');
+
+    function showPinGate(){ pinGate.classList.add('active'); admin.classList.remove('active'); $('#pin').focus(); }
+    function openAdmin(){ pinGate.classList.remove('active'); admin.classList.add('active'); }
+
+    function getQueryParam(name){
+      const url = new URL(location.href);
+      return url.searchParams.get(name);
+    }
+
+    function ensureAdminVisibility(){
+      const c = cfg.get();
+      const hasSecret = getQueryParam('admin');
+      const shouldShowButton = !c.adminHidden; // Button nur, wenn nicht versteckt
+      $('#adminReveal').style.display = shouldShowButton ? 'inline-flex' : 'none';
+
+      // PIN-Gate nur zeigen, wenn geheime URL passt
+      if(hasSecret && hasSecret === c.adminToken){ showPinGate(); }
+    }
+
+    // Erstes Setup erzwingen
+    function needSetup(){ return !cfg.isConfigured(); }
+
+    function makeToken(){ return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) }
+
+    function showSetup(){ $('#setupOverlay').classList.add('active'); }
+    function hideSetup(){ $('#setupOverlay').classList.remove('active'); }
+
+    function updateSecretPreview(){
+      const hide = $('#hideToggle').checked;
+      $('#secretBox').style.display = hide ? 'block' : 'none';
+      if(hide){
+        const tempToken = makeToken();
+        $('#secretUrl').textContent = location.origin + location.pathname + `?admin=${tempToken}`;
+        $('#secretUrl').dataset.tempToken = tempToken;
+      }
+    }
+
+    $('#hideToggle').addEventListener('change', updateSecretPreview);
+
+    $('#saveSetup').addEventListener('click', ()=>{
+      const p1 = $('#setupPin1').value.trim();
+      const p2 = $('#setupPin2').value.trim();
+      if(!p1 || p1 !== p2){ $('#setupMsg').textContent = '❌ PINs stimmen nicht überein.'; return }
+      const hide = $('#hideToggle').checked;
+      const tempToken = $('#secretUrl').dataset.tempToken || makeToken();
+      cfg.set({ pinHash: hash(p1), adminHidden: hide, adminToken: tempToken });
+      $('#setupMsg').textContent = '✔️ Gespeichert. Du kannst jetzt den Admin öffnen und Folgen anlegen.';
+      // Admin-Schalter ggf. verstecken und geheime URL erzeugen
+      ensureAdminVisibility();
+      $('#addEpisode').disabled = false; // Upload erst nach Setup erlauben
+      setTimeout(hideSetup, 600);
+    });
+
+    $('#cancelSetup').addEventListener('click', ()=>{ hideSetup(); });
+
+    // Admin öffnen
+    adminReveal.addEventListener('click', showPinGate);
+
+    $('#enterPin').addEventListener('click', ()=>{
+      const pinOk = hash($('#pin').value) === (cfg.get().pinHash||'');
+      $('#pinMsg').textContent = pinOk ? '✔️ Geöffnet' : '❌ Falsche PIN';
+      if(pinOk) openAdmin();
+    });
+
+// ======= Logo-Upload & Anzeige =======
+$('#saveLogo').addEventListener('click', async ()=>{
+  const file = $('#fLogo').files[0];
+  if(!file){ alert('Bitte eine Bilddatei auswählen.'); return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    localStorage.setItem(LOGO_KEY, reader.result); // Base64 speichern
+    renderLogo();
+    alert('Logo gespeichert.');
+  };
+  reader.readAsDataURL(file);
+});
+
+function renderLogo(){
+  const data = localStorage.getItem(LOGO_KEY);
+  const img = $('#logoImg');
+  const svg = $('#logoSvg');
+  if(!img || !svg) return; // falls Header noch nicht gerendert ist
+  if(data){
+    img.src = data;
+    img.style.display = 'block';
+    svg.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    svg.style.display = 'block';
+  }
+}
+
+$('#deleteLogo').addEventListener('click', ()=>{
+  if(confirm('Möchtest du das Logo wirklich löschen?')){
+    localStorage.removeItem(LOGO_KEY);
+    renderLogo();
+    alert('Logo gelöscht.');
+  }
+});
+
+    // ======= Upload / Hinzufügen =======
+    $('#addEpisode').addEventListener('click', async ()=>{
+      if(needSetup()){ alert('Bitte zuerst Setup abschließen.'); return }
+      const title = $('#fTitle').value.trim();
+      const len   = $('#fLen').value.trim();
+      const url   = $('#fUrl').value.trim();
+      const desc  = $('#fDesc').value.trim();
+      const txt   = $('#fTxt').value.trim();
+      const file  = $('#fFile').files[0];
+
+      if(!title){ alert('Bitte Titel eingeben.'); return }
+      let src = '';
+      let local = false;
+
+      if(url){
+        src = url; // muss direkte .mp3-URL sein, CORS erlaubt
+      } else if(file){
+        const key = `mp3_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        await idbPut(key, file);
+        src = `idb://${key}`;
+        local = true;
+      } else { alert('Bitte MP3-URL einfügen oder Datei auswählen.'); return }
+
+      const data = store.get();
+      data.episodes.unshift({ title, length: len, src, desc, txt, local, ts: Date.now() });
+      store.set(data);
+
+      ['#fTitle','#fLen','#fUrl','#fDesc','#fTxt'].forEach(s=> $(s).value = '');
+      $('#fFile').value = '';
+
+      await render();
+      alert('Folge gespeichert.');
+    });
+
+    // ======= Export / Wipe =======
+    $('#exportBtn').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(store.get(), null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'podcast-daten.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    $('#wipeAll').addEventListener('click', async ()=>{
+      if(confirm('Wirklich alle Folgen und lokale Dateien löschen?')){
+        store.clear();
+        await idbClear();
+        render();
+      }
+    });
+
+    // ======= Init =======
+    $('#year').textContent = new Date().getFullYear();
+
+    (async function init(){
+      // Setup-Flow: Vor dem ersten Upload muss Setup erfolgen
+      const configured = cfg.isConfigured();
+      if(!configured){
+        // Admin-Button vor Setup anzeigen, damit Lehrkraft Setup findet
+        $('#adminReveal').style.display = 'inline-flex';
+        // Upload-Button gesperrt, bis Setup fertig
+        $('#addEpisode').disabled = true;
+        showSetup();
+      } else {
+        ensureAdminVisibility();
+        $('#addEpisode').disabled = false;
+      }
+
+      await render();
+      renderLogo(); // Logo beim Start laden
+
+
+      // Wenn geheime URL passt, zeige PIN-Gate
+      const c = cfg.get();
+      if(getQueryParam('admin') && getQueryParam('admin') === c.adminToken){ showPinGate(); }
+
+      // Setup-Overlay aktualisiert geheime URL-Vorschau beim Umschalten
+      updateSecretPreview();
+    })();
+  </script>
+</body>
+</html>
